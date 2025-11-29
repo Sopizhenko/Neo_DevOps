@@ -1,0 +1,33 @@
+# Local .terraform directories
+**/.terraform/*
+.terraform.tfstate.lock.info
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Terraform variable files containing sensitive data
+*.tfvars
+*.tfvars.json
+
+# Ignore override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI-driven tfplan files
+*.tfplan
+
+# AWS credentials (if someone stores them here accidentally)
+aws_credentials
+aws_access_keys.txt
+
+# Editor settings
+.vscode/
+.idea/
+*.swp
