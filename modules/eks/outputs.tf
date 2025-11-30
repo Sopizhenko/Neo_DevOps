@@ -13,3 +13,9 @@ output "cluster_ca_certificate" {
 output "node_group_name" {
   value = aws_eks_node_group.this.node_group_name
 }
+
+output "node_security_group_id" {
+  description = "Security group ID for EKS nodes"
+  value       = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
+}
+

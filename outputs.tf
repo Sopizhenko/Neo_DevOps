@@ -70,3 +70,66 @@ output "argocd_admin_password" {
   value       = module.argo_cd.argocd_admin_password
   sensitive   = true
 }
+
+#-------------RDS PostgreSQL-----------------
+
+output "postgres_endpoint" {
+  description = "PostgreSQL RDS endpoint"
+  value       = module.rds_postgres.endpoint
+}
+
+output "postgres_database_name" {
+  description = "PostgreSQL database name"
+  value       = module.rds_postgres.database_name
+}
+
+output "postgres_master_username" {
+  description = "PostgreSQL master username"
+  value       = module.rds_postgres.master_username
+  sensitive   = true
+}
+
+output "postgres_port" {
+  description = "PostgreSQL port"
+  value       = module.rds_postgres.port
+}
+
+output "postgres_connection_string" {
+  description = "PostgreSQL connection string"
+  value       = module.rds_postgres.connection_string
+  sensitive   = true
+}
+
+#-------------RDS Aurora MySQL-----------------
+
+output "aurora_endpoint" {
+  description = "Aurora cluster writer endpoint"
+  value       = module.rds_aurora.endpoint
+}
+
+output "aurora_reader_endpoint" {
+  description = "Aurora cluster reader endpoint"
+  value       = module.rds_aurora.reader_endpoint
+}
+
+output "aurora_database_name" {
+  description = "Aurora database name"
+  value       = module.rds_aurora.database_name
+}
+
+output "aurora_master_username" {
+  description = "Aurora master username"
+  value       = module.rds_aurora.master_username
+  sensitive   = true
+}
+
+output "aurora_port" {
+  description = "Aurora port"
+  value       = module.rds_aurora.port
+}
+
+output "aurora_connection_string" {
+  description = "Aurora connection string"
+  value       = module.rds_aurora.connection_string
+  sensitive   = true
+}

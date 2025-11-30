@@ -81,3 +81,110 @@ module "argo_cd" {
   github_target_revision = "lesson-7"
   helm_chart_path        = "charts/django-app"
 }
+
+# Модуль RDS - PostgreSQL (standard RDS)
+module "rds_postgres" {
+  source = "./modules/rds"
+
+  identifier     = "lesson-postgres"
+  use_aurora     = false
+  engine         = "postgres"
+  engine_version = "14.7"
+  instance_class = "db.t3.micro"
+
+  allocated_storage = 20
+  storage_type      = "gp3"
+
+  database_name   = "myappdb"
+  master_username = "dbadmin"
+  master_password = "ChangeMe123!"  # Should use AWS Secrets Manager in production
+  port            = 5432
+
+  multi_az = false
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnet_ids
+
+  # Allow access from EKS nodes
+  allowed_security_group_ids = [module.eks.node_security_group_id]
+
+  backup_retention_period = 7
+  deletion_protection     = false
+  skip_final_snapshot     = true
+
+  parameter_group_family = "postgres14"
+  parameters = [
+    {
+      name  = "max_connections"
+      value = "100"
+    },
+    {
+      name  = "shared_buffers"
+      value = "{DBInstanceClassMemory/32768}"
+    },
+    {
+      name  = "log_statement"
+      value = "all"
+    },
+    {
+      name  = "log_min_duration_statement"
+      value = "1000"
+    }
+  ]
+
+  enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
+
+  tags = {
+    Environment = "lesson-8-9"
+    Project     = "Neo-DevOps"
+    Type        = "PostgreSQL-RDS"
+  }
+}
+
+# Модуль RDS - Aurora MySQL
+module "rds_aurora" {
+  source = "./modules/rds"
+
+  identifier     = "lesson-aurora"
+  use_aurora     = true
+  engine         = "aurora-mysql"
+  engine_version = "8.0.mysql_aurora.3.02.0"
+  instance_class = "db.t3.small"
+
+  database_name   = "auroradb"
+  master_username = "auroramin"
+  master_password = "AuroraPass123!"  # Should use AWS Secrets Manager in production
+  port            = 3306
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnet_ids
+
+  # Allow access from EKS nodes
+  allowed_security_group_ids = [module.eks.node_security_group_id]
+
+  aurora_instance_count = 2
+
+  backup_retention_period = 7
+  deletion_protection     = false
+  skip_final_snapshot     = true
+
+  parameter_group_family = "aurora-mysql8.0"
+  parameters = [
+    {
+      name  = "max_connections"
+      value = "150"
+    },
+    {
+      name  = "innodb_buffer_pool_size"
+      value = "{DBInstanceClassMemory*3/4}"
+    }
+  ]
+
+  enabled_cloudwatch_logs_exports = ["audit", "error", "general", "slowquery"]
+
+  tags = {
+    Environment = "lesson-8-9"
+    Project     = "Neo-DevOps"
+    Type        = "Aurora-MySQL"
+  }
+}
