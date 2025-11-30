@@ -25,8 +25,8 @@ resource "aws_ecr_repository_policy" "this" {
     Version = "2008-10-17"
     Statement = [
       {
-        Sid       = "AllowPushPull"
-        Effect    = "Allow"
+        Sid    = "AllowPushPull"
+        Effect = "Allow"
         Principal = {
           AWS = data.aws_caller_identity.current.account_id
         }

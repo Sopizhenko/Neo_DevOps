@@ -1,0 +1,108 @@
+controller:
+  adminUser: "${admin_user}"
+  adminPassword: "${admin_password}"
+  
+  serviceType: LoadBalancer
+  
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  
+  # Enable persistent storage
+  persistence:
+    enabled: true
+    storageClass: "${storage_class}"
+    size: "10Gi"
+  
+  # Jenkins plugins to install
+  installPlugins:
+    - kubernetes:4153.v2a_6a_9f142c7a_
+    - workflow-aggregator:596.v8c21c963d92d
+    - git:5.2.2
+    - configuration-as-code:1775.v810dc950b_514
+    - pipeline-stage-view:2.34
+    - docker-workflow:572.v950f58993843
+    - aws-credentials:218.v1b_e9466ec5da_
+    - amazon-ecr:1.77.v3865bd7b_15fe
+    - pipeline-aws:1.43
+    - blueocean:1.27.11
+  
+  # JCasC configuration
+  JCasC:
+    defaultConfig: true
+    configScripts:
+      welcome-message: |
+        jenkins:
+          systemMessage: "Jenkins для CI/CD з Kaniko + ECR"
+      
+      credentials: |
+        credentials:
+          system:
+            domainCredentials:
+              - credentials:
+                - aws:
+                    accessKey: "$${AWS_ACCESS_KEY_ID}"
+                    secretKey: "$${AWS_SECRET_ACCESS_KEY}"
+                    id: "aws-credentials"
+                    description: "AWS credentials for ECR"
+                    scope: GLOBAL
+      
+      kubernetes-cloud: |
+        jenkins:
+          clouds:
+            - kubernetes:
+                name: "kubernetes"
+                serverUrl: "https://kubernetes.default"
+                namespace: "jenkins"
+                jenkinsUrl: "http://jenkins:8080"
+                jenkinsTunnel: "jenkins-agent:50000"
+                containerCapStr: "10"
+                podLabels:
+                  - key: "jenkins"
+                    value: "agent"
+                templates:
+                  - name: "kaniko"
+                    label: "kaniko"
+                    nodeUsageMode: NORMAL
+                    containers:
+                      - name: "kaniko"
+                        image: "gcr.io/kaniko-project/executor:v1.23.0-debug"
+                        command: "/busybox/cat"
+                        ttyEnabled: true
+                        privileged: false
+                        resourceRequestCpu: "500m"
+                        resourceRequestMemory: "1Gi"
+                        resourceLimitCpu: "2000m"
+                        resourceLimitMemory: "2Gi"
+                      - name: "git"
+                        image: "alpine/git:latest"
+                        command: "/bin/sh -c"
+                        args: "cat"
+                        ttyEnabled: true
+                        resourceRequestCpu: "100m"
+                        resourceRequestMemory: "128Mi"
+                    volumes:
+                      - emptyDirVolume:
+                          mountPath: "/workspace"
+                          memory: false
+                    yaml: |
+                      spec:
+                        serviceAccountName: jenkins
+                        securityContext:
+                          runAsUser: 0
+                          fsGroup: 0
+
+agent:
+  enabled: true
+  
+serviceAccount:
+  create: false
+  name: jenkins
+
+rbac:
+  create: true
+  readSecrets: true
