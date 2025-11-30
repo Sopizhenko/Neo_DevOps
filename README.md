@@ -1,31 +1,86 @@
-# Lesson- 10 — CI/CD Pipeline з Jenkins, Argo CD, Helm, Terraform і RDS
+# Фінальний Проєкт DevOps — Повна AWS інфраструктура з CI/CD
 
-Повний CI/CD процес для Django-застосунку з використанням Jenkins, Helm, Terraform, Argo CD та RDS/Aurora на AWS EKS.
+Комплексне розгортання DevOps інфраструктури на AWS з використанням Terraform, що включає EKS, Jenkins, Argo CD, RDS/Aurora, ECR, та Prometheus/Grafana моніторинг.
 
-## 🎯 Мета проєкту
+## 🎯 Мета фінального проєкту
 
-Реалізувати повний CI/CD-процес з базами даних, який:
-1. Автоматично збирає Docker-образ для Django-застосунку
-2. Публікує образ в Amazon ECR
-3. Оновлює Helm chart у репозиторії з правильним тегом
-4. Синхронізує застосунок у кластері через Argo CD
-5. Надає гнучку інфраструктуру баз даних (RDS або Aurora)
+Реалізувати повноцінну production-ready DevOps інфраструктуру, що включає:
+1. ✅ **Kubernetes кластер (EKS)** з підтримкою CI/CD
+2. ✅ **Jenkins** для автоматизації збірки та деплою
+3. ✅ **Argo CD** для GitOps управління застосунками
+4. ✅ **RDS/Aurora** бази даних з високою доступністю
+5. ✅ **ECR** контейнерний реєстр
+6. ✅ **Prometheus & Grafana** для моніторингу та метрик
+7. ✅ **Django застосунок** з автоматичним деплоєм
 
 
-## 🏗️ Архітектура CI/CD
+## 🏗️ Архітектура інфраструктури
 
 ```
-Developer Push → GitHub → Jenkins Pipeline → Build Image (Kaniko) → Push to ECR
-                                          ↓
-                                   Update values.yaml
-                                          ↓
-                                   Push to GitHub
-                                          ↓
-                              Argo CD detects change
-                                          ↓
-                              Deploy to EKS Cluster
-                                          ↓
-                              Connect to RDS/Aurora
+AWS Cloud Infrastructure
+│
+├── VPC (10.0.0.0/16)
+│   ├── Public Subnets (3 AZ: us-west-2a/b/c)
+│   └── Private Subnets (3 AZ: us-west-2a/b/c)
+│
+├── EKS Cluster (lesson-7-eks)
+│   ├── Node Group (t2.micro, 2-6 nodes)
+│   ├── AWS EBS CSI Driver
+│   └── Kubernetes v1.28+
+│
+├── RDS Databases
+│   ├── PostgreSQL 14.7 (db.t3.micro) - Standard RDS
+│   └── Aurora MySQL 8.0 (db.t3.small, 2 instances) - Cluster
+│
+├── ECR Repository (lesson-5-ecr)
+│   └── Docker images for Django app
+│
+└── S3 + DynamoDB
+    └── Terraform State Backend
+
+Kubernetes Applications (in EKS)
+│
+├── jenkins (namespace)
+│   └── Jenkins CI/CD Server + Kaniko builder
+│
+├── argocd (namespace)
+│   └── Argo CD GitOps Controller + Applications
+│
+├── monitoring (namespace)
+│   ├── Prometheus (metrics collection)
+│   ├── Grafana (visualization & dashboards)
+│   ├── Alertmanager (alerting)
+│   └── Node Exporter + Kube State Metrics
+│
+└── default (namespace)
+    └── Django App (managed by Argo CD)
+        ├── Deployment (HPA enabled)
+        ├── Service (LoadBalancer)
+        └── ConfigMap (environment variables)
+```
+
+## 🔄 CI/CD Workflow
+
+```
+Developer Push → GitHub (lesson-7 branch)
+                    ↓
+          Jenkins detects change
+                    ↓
+        Build Docker Image (Kaniko)
+                    ↓
+          Push to Amazon ECR
+                    ↓
+    Update charts/django-app/values.yaml
+                    ↓
+        Commit & Push to GitHub
+                    ↓
+    Argo CD detects values.yaml change
+                    ↓
+      Auto-sync Django Deployment
+                    ↓
+  New Pods deployed with updated image
+                    ↓
+   Prometheus collects metrics → Grafana displays
 ```
 
 ## 🗄️ Архітектура баз даних
@@ -46,157 +101,221 @@ Developer Push → GitHub → Jenkins Pipeline → Build Image (Kaniko) → Push
 
 ---
 
-## 📂 Структура проєкту
+## 📂 Структура фінального проєкту
 
 ```
 lesson-5/
 │
-├── main.tf                      # Головний Terraform файл
-├── backend.tf                   # S3 backend конфігурація
-├── outputs.tf                   # Outputs для всіх модулів
-├── Jenkinsfile                  # Jenkins CI pipeline
-├── Dockerfile                   # Django app Dockerfile
+├── main.tf                      # Головний файл - підключення всіх модулів
+├── backend.tf                   # S3 backend конфігурація для state
+├── outputs.tf                   # Outputs для всіх компонентів
+├── Jenkinsfile                  # Jenkins CI/CD pipeline
+├── Dockerfile                   # Django app container image
 ├── requirements.txt             # Python dependencies
+├── manage.py                    # Django management script
+├── README.md                    # Ця документація
+├── FINAL_PROJECT.md             # Детальна інструкція фінального проєкту
 │
-├── modules/
-│   ├── s3-backend/             # S3 + DynamoDB для state
-│   ├── vpc/                    # VPC, subnets, routing
-│   ├── ecr/                    # ECR repository
-│   ├── eks/                    # EKS cluster + EBS CSI Driver
+├── modules/                     # Terraform модулі
+│   │
+│   ├── s3-backend/             # S3 bucket + DynamoDB для state locking
+│   │   ├── s3.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── vpc/                    # VPC, Subnets, Internet Gateway, Routes
+│   │   ├── vpc.tf
+│   │   ├── routes.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── ecr/                    # Amazon Elastic Container Registry
+│   │   ├── ecr.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   │
+│   ├── eks/                    # EKS Cluster + Node Group + EBS CSI
 │   │   ├── eks.tf
 │   │   ├── aws_ebs_csi_driver.tf
 │   │   ├── variables.tf
 │   │   └── outputs.tf
-│   ├── jenkins/                # Jenkins Helm installation
+│   │
+│   ├── rds/                    # RDS PostgreSQL & Aurora MySQL
+│   │   ├── variables.tf        # 29 змінних для гнучкої конфігурації
+│   │   ├── shared.tf           # DB Subnet Group, Security Groups
+│   │   ├── rds.tf              # Standard RDS instance
+│   │   ├── aurora.tf           # Aurora Cluster з multiple instances
+│   │   └── outputs.tf          # Connection strings, endpoints
+│   │
+│   ├── jenkins/                # Jenkins Helm chart deployment
 │   │   ├── jenkins.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   ├── providers.tf
-│   │   └── values.yaml
-│   ├── argo_cd/                # Argo CD Helm installation
+│   │   ├── providers.tf        # Kubernetes + Helm providers
+│   │   └── values.yaml         # Jenkins configuration
+│   │
+│   ├── argo_cd/                # Argo CD Helm chart + Applications
 │   │   ├── argo_cd.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
 │   │   ├── providers.tf
-│   │   ├── values.yaml
-│   │   └── charts/             # Argo CD Application chart
+│   │   ├── values.yaml         # Argo CD configuration
+│   │   └── charts/             # Custom chart for Applications
 │   │       ├── Chart.yaml
 │   │       ├── values.yaml
 │   │       └── templates/
-│   │           ├── application.yaml
-│   │           └── repository.yaml
-│   └── rds/                    # RDS/Aurora module (НОВИЙ!)
-│       ├── variables.tf        # 29 змінних для конфігурації
-│       ├── shared.tf           # DB Subnet Group, Security Group
-│       ├── rds.tf              # Standard RDS resources
-│       ├── aurora.tf           # Aurora Cluster resources
-│       ├── outputs.tf          # Connection strings, endpoints
-│       └── README.md           # Детальна документація
+│   │           ├── application.yaml    # Django app Application CRD
+│   │           └── repository.yaml     # Git repository config
+│   │
+│   └── monitoring/             # 🆕 Prometheus + Grafana (НОВИЙ МОДУЛЬ!)
+│       ├── monitoring.tf       # Kube-Prometheus-Stack Helm release
+│       ├── variables.tf        # Configuration variables
+│       ├── outputs.tf          # URLs, passwords, port-forward commands
+│       ├── providers.tf        # Kubernetes + Helm providers
+│       └── values.yaml         # Prometheus & Grafana configuration
 │
-└── charts/
-    └── django-app/             # Django Helm chart
-        ├── Chart.yaml
-        ├── values.yaml
-        └── templates/
-            ├── deployment.yaml
-            ├── service.yaml
-            ├── configmap.yaml
-            └── hpa.yaml
+├── charts/                     # Helm charts
+│   └── django-app/             # Django application Helm chart
+│       ├── Chart.yaml
+│       ├── values.yaml         # Image tag, replicas, resources
+│       └── templates/
+│           ├── deployment.yaml # Django Deployment with HPA
+│           ├── service.yaml    # LoadBalancer Service
+│           ├── configmap.yaml  # Environment variables
+│           └── hpa.yaml        # Horizontal Pod Autoscaler
+│
+└── myproject/                  # Django application code
+    ├── __init__.py
+    ├── settings.py             # Django settings
+    ├── urls.py                 # URL routing
+    └── wsgi.py                 # WSGI application
 ```
 
 
 ## 📋 Передумови
 
-- AWS CLI налаштовано з валідними credentials
-- Terraform >= 1.6.0
-- kubectl
-- Helm >= 3.0
-- Git
-- AWS Account з правами на створення EKS, ECR, VPC, S3, RDS
+### Необхідне програмне забезпечення:
+
+- ✅ **AWS CLI** налаштовано з валідними credentials
+- ✅ **Terraform** >= 1.6.0
+- ✅ **kubectl** для роботи з Kubernetes
+- ✅ **Helm** >= 3.0 для деплою charts
+- ✅ **Git** для version control
+- ✅ **AWS Account** з правами на створення:
+  - EKS, VPC, EC2
+  - RDS, Aurora
+  - ECR
+  - S3, DynamoDB
+  - IAM Roles/Policies
+
+### Перевірка встановлення:
+
+```bash
+# Перевірте версії
+terraform --version    # >= 1.6.0
+aws --version         # >= 2.0
+kubectl version --client
+helm version          # >= 3.0
+git --version
+
+# Налаштуйте AWS credentials
+aws configure
+# Введіть: Access Key ID, Secret Access Key, Region (us-west-2)
+
+# Перевірка доступу до AWS
+aws sts get-caller-identity
+```
 
 ---
 
-## 🚀 Встановлення
+## 🚀 Розгортання інфраструктури
+
+### ⚠️ ВАЖЛИВО: Розгортання відбувається у ДВА ЕТАПИ!
 
 ### Крок 1: Ініціалізація Terraform
 
 ```bash
 cd /home/asopi/projects/lesson-5
 
-# Ініціалізація Terraform
-terraform init
+# Ініціалізація Terraform (завантаження провайдерів)
+terraform init -upgrade
 
-# Перегляд плану
+# Перегляд плану (опціонально)
 terraform plan
+```
 
-# Застосування конфігурації (створення всієї інфраструктури)
+### Крок 2: Етап 1 - Базова інфраструктура
+
+```bash
+# Розгортаємо S3 Backend, VPC, ECR, EKS
+terraform apply \
+  -target=module.s3_backend \
+  -target=module.vpc \
+  -target=module.ecr \
+  -target=module.eks \
+  -auto-approve
+```
+
+**Що створюється:**
+- ✅ S3 bucket `lesson-5-s3-back` для Terraform state
+- ✅ DynamoDB table для state locking
+- ✅ VPC з 3 публічними та 3 приватними підмережами
+- ✅ ECR repository `lesson-5-ecr`
+- ✅ EKS cluster `lesson-7-eks` з node group (2-6 nodes, t2.micro)
+- ✅ AWS EBS CSI Driver для persistent volumes
+
+⏱️ **Очікуваний час**: 15-20 хвилин
+
+### Крок 3: Налаштування kubectl
+
+```bash
+# Отримання credentials для EKS кластера
+aws eks update-kubeconfig --region us-west-2 --name lesson-7-eks
+
+# Перевірка доступу до кластера
+kubectl get nodes
+kubectl get namespaces
+
+# Очікуваний результат: 2+ nodes в Ready стані
+```
+
+### Крок 4: Етап 2 - Додаткові сервіси
+
+```bash
+# Розгортаємо RDS, Jenkins, Argo CD, Monitoring
 terraform apply -auto-approve
 ```
 
-Цей процес створить:
-- ✅ S3 bucket для Terraform state
-- ✅ VPC з публічними та приватними підмережами
-- ✅ ECR repository для Docker образів
-- ✅ EKS cluster з node group
-- ✅ EBS CSI Driver для persistent volumes
+**Що додається:**
+- ✅ RDS PostgreSQL 14.7 (db.t3.micro)
+- ✅ Aurora MySQL Cluster з 2 інстансами (db.t3.small)
 - ✅ Jenkins через Helm (з Kaniko підтримкою)
-- ✅ Argo CD через Helm (з автоматичною Application)
-- ✅ RDS PostgreSQL інстанс (Standard RDS)
-- ✅ Aurora MySQL кластер з 2 інстансами
+- ✅ Argo CD через Helm (з автоматичною Application для Django)
+- ✅ Prometheus + Grafana для моніторингу
 
-### Крок 2: Налаштування kubectl
+⏱️ **Очікуваний час**: 20-25 хвилин
 
-```bash
-# Отримання credentials для EKS
-aws eks update-kubeconfig --region us-west-2 --name lesson-7-eks
-
-# Перевірка доступу
-kubectl get nodes
-kubectl get namespaces
-```
-
-### Крок 3: Отримання URL та паролів
+### Крок 5: Отримання інформації про ресурси
 
 ```bash
-# Отримати всі outputs
+# Виведіть всі outputs
 terraform output
 
-# Jenkins
-terraform output jenkins_url
-terraform output -raw jenkins_admin_password
-
-# Argo CD
-terraform output argocd_url
-terraform output -raw argocd_admin_password
-
-# ECR
+# Отримайте конкретні значення
 terraform output ecr_repository_url
+terraform output eks_cluster_name
+terraform output jenkins_url
+terraform output argocd_url
+terraform output grafana_url
 
-# RDS PostgreSQL (Standard)
-terraform output rds_postgres_endpoint
-terraform output rds_postgres_connection_string
+# Отримайте паролі (вони sensitive)
+terraform output -raw jenkins_admin_password
+terraform output -raw argocd_admin_password
+terraform output -raw grafana_admin_password
 
-# Aurora MySQL (Cluster)
-terraform output rds_aurora_cluster_endpoint
-terraform output rds_aurora_reader_endpoint
-terraform output rds_aurora_connection_string
-```
-
-### Крок 4: Підключення до бази даних
-
-```bash
-# Отримати connection strings
-POSTGRES_CONN=$(terraform output -raw rds_postgres_connection_string)
-AURORA_CONN=$(terraform output -raw rds_aurora_connection_string)
-
-echo "PostgreSQL: $POSTGRES_CONN"
-echo "Aurora MySQL: $AURORA_CONN"
-
-# Підключення через psql (PostgreSQL)
-psql "$POSTGRES_CONN"
-
-# Підключення через mysql (Aurora)
-mysql -h <aurora-endpoint> -u admin -p mydatabase
+# Database connection strings
+terraform output -raw postgres_connection_string
+terraform output -raw aurora_connection_string
 ```
 
 ---

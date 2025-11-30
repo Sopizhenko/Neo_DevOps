@@ -133,3 +133,31 @@ output "aurora_connection_string" {
   value       = module.rds_aurora.connection_string
   sensitive   = true
 }
+
+#-------------Monitoring-----------------
+
+output "prometheus_url" {
+  description = "Prometheus URL (requires port-forward)"
+  value       = module.monitoring.prometheus_url
+}
+
+output "grafana_url" {
+  description = "Grafana URL (requires port-forward)"
+  value       = module.monitoring.grafana_url
+}
+
+output "grafana_admin_user" {
+  description = "Grafana admin username"
+  value       = module.monitoring.grafana_admin_user
+}
+
+output "grafana_admin_password" {
+  description = "Grafana admin password"
+  value       = module.monitoring.grafana_admin_password
+  sensitive   = true
+}
+
+output "monitoring_port_forward_commands" {
+  description = "Commands to access monitoring services"
+  value       = module.monitoring.port_forward_commands
+}

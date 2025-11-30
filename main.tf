@@ -188,3 +188,19 @@ module "rds_aurora" {
     Type        = "Aurora-MySQL"
   }
 }
+
+# Модуль Monitoring - Prometheus & Grafana
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  cluster_name           = module.eks.cluster_name
+  cluster_endpoint       = module.eks.cluster_endpoint
+  cluster_ca_certificate = module.eks.cluster_ca_certificate
+
+  namespace                = "monitoring"
+  prometheus_chart_version = "55.5.0"
+  prometheus_retention     = "15d"
+  prometheus_storage_size  = "50Gi"
+  grafana_admin_password   = "admin123"  # Should use AWS Secrets Manager in production
+  enable_django_monitoring = true
+}
