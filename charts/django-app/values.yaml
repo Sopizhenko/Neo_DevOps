@@ -1,0 +1,25 @@
+appName: django-app
+
+image:
+  repository: 093667080593.dkr.ecr.us-west-2.amazonaws.com/lesson-5-ecr
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+replicaCount: 2
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8000
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+env:
+  DJANGO_DEBUG: "false"
+  DJANGO_SECRET_KEY: "change-me"
+  DJANGO_ALLOWED_HOSTS: "*"
+  # DATABASE_URL: "postgres://user:pass@host:5432/dbname"
